@@ -1,5 +1,5 @@
 import React from "react"
-import clsx from "clsx"
+import { cn } from "@/lib/utils"
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "default" | "outline" | "ghost" | "destructive"
@@ -24,8 +24,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={clsx(
-          "inline-flex items-center justify-center rounded-md font-medium transition-colors",
+        className={cn(
+          "inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
           variants[variant],
           sizes[size],
           className
