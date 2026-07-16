@@ -1,5 +1,5 @@
 import React from "react"
-import clsx from "clsx"
+import { cn } from "@/lib/utils"
 
 interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "secondary" | "destructive" | "outline"
@@ -17,7 +17,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
     return (
       <div
         ref={ref}
-        className={clsx(
+        className={cn(
           "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
           variants[variant],
           className
