@@ -1,74 +1,88 @@
 import { create } from "zustand"
 
 interface Video {
-  video_id: string
-  platform: string
-  title: string
-  creator: string
-  views: number
-  likes: number
-  comments: number
-  engagement_rate: number
-  upload_date?: string
-  duration?: number
-  hashtags: string[]
-  thumbnail_url?: string
-  transcript_length: number
-  chunks_count: number
+    video_id: string
+    platform: string
+    title: string
+    creator: string
+    views: number
+    likes: number
+    comments: number
+    engagement_rate: number
+    upload_date?: string
+    duration?: number
+    hashtags: string[]
+    thumbnail_url?: string
+    transcript_length: number
+    chunks_count: number
 }
 
 interface ChatMessage {
-  role: "user" | "assistant"
-  content: string
-  sources?: Array<{
-    video_id: string
-    platform: string
-    chunk_index: number
-  }>
+    role: "user" | "assistant"
+    content: string
+    sources?: Array<{
+      video_id: string
+      platform: string
+      chunk_index: number
+    }>
 }
 
 interface ChatStore {
-  sessionId: string | null
-  videoA: Video | null
-  videoB: Video | null
-  messages: ChatMessage[]
-  isLoading: boolean
-  error: string | null
+    sessionId: string | null
+    videoA: Video | null
+    videoB: Video | null
+    messages: ChatMessage[]
+    isLoading: boolean
+    error: string | null
 
   setSession: (sessionId: string, videoA: Video, videoB: Video) => void
-  addMessage: (message: ChatMessage) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-  clearChat: () => void
+    addMessage: (message: ChatMessage) => void
+    updateLastMessage: (content: string, sources?: ChatMessage["sources"]) => void
+    setLoading: (loading: boolean) => void
+    setError: (error: string | null) => void
+    clearChat: () => void
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
-  sessionId: null,
-  videoA: null,
-  videoB: null,
-  messages: [],
-  isLoading: false,
-  error: null,
+    sessionId: null,
+    videoA: null,
+    videoB: null,
+    messages: [],
+    isLoading: false,
+    error: null,
 
-  setSession: (sessionId, videoA, videoB) =>
-    set({ sessionId, videoA, videoB, messages: [] }),
+    setSession: (sessionId, videoA, videoB) =>
+          set({ sessionId, videoA, videoB, messages: [], error: null }),
 
-  addMessage: (message) =>
-    set((state) => ({
-      messages: [...state.messages, message],
-    })),
+    addMessage: (message) =>
+          set((state) => ({
+                  messages: [...state.messages, message],
+          })),
 
-  setLoading: (isLoading) => set({ isLoading }),
+    updateLastMessage: (content, sources) =>
+          set((state) => {
+                  if (state.messages.length === 0) return state
+                  const messages = [...state.messages]
+                  const last = messages[messages.length - 1]
+                  messages[messages.length - 1] = {
+                            ...last,
+                            content,
+                            sources: sources ?? last.sources,
+                  }
+                  return { messages }
+          }),
 
-  setError: (error) => set({ error }),
+    setLoading: (isLoading) => set({ isLoading }),
 
-  clearChat: () =>
-    set({
-      sessionId: null,
-      videoA: null,
-      videoB: null,
-      messages: [],
-      isLoading: false,
-      error: null,
-    }),
+    setError: (error) => set({ error }),
+
+    clearChat: () =>
+          set({
+                  sessionId: null,
+                  videoA: null,
+                  videoB: null,
+                  messages: [],
+                  isLoading: false,
+                  error: null,
+          }),
 }))
