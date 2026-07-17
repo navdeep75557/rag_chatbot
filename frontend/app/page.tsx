@@ -10,7 +10,7 @@ import ChatPanel from "@/components/ChatPanel"
 const queryClient = new QueryClient()
 
 function DashboardContent() {
-  const { sessionId, videoA, videoB, clearChat } = useChatStore()
+  const { sessionId, videoA, videoB, isDemo, clearChat } = useChatStore()
 
   if (!sessionId || !videoA || !videoB) {
     return <VideoAnalyzer onSessionCreated={() => {}} />
@@ -25,8 +25,19 @@ function DashboardContent() {
               🎬
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white leading-tight">Video Analysis</h1>
-              <p className="text-sm text-slate-400">Comparing two videos side by side</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white leading-tight">Video Analysis</h1>
+                {isDemo && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 text-xs font-medium px-2.5 py-0.5">
+                    🧪 Demo Data
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-400">
+                {isDemo
+                  ? "Sample results shown — no live backend connected"
+                  : "Comparing two videos side by side"}
+              </p>
             </div>
           </div>
           <button
