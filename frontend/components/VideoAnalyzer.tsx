@@ -7,6 +7,7 @@ import { Input } from "./ui/Input"
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/Card"
 import { apiClient } from "@/services/api"
 import { useChatStore } from "@/hooks/useChatStore"
+import { generateMockSession, demoUrls } from "@/lib/mockData"
 
 interface VideoAnalyzerProps {
   onSessionCreated?: (sessionId: string) => void
@@ -20,23 +21,32 @@ interface FormData {
 type BackendStatus = "checking" | "online" | "offline"
 
 const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ onSessionCreated }) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>()
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>()
   const { setSession, setError, error } = useChatStore()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking")
-  const [backendDetail, setBackendDetail] = useState<string | undefined>()
 
   useEffect(() => {
     let cancelled = false
     apiClient.getHealth().then((result) => {
       if (cancelled) return
       setBackendStatus(result.ok ? "online" : "offline")
-      setBackendDetail(result.detail)
     })
     return () => {
       cancelled = true
     }
   }, [])
+
+  const loadDemo = (youtubeUrl: string, instagramUrl: string) => {
+    const result = generateMockSession(youtubeUrl, instagramUrl)
+    setSession(result.session_id, result.videoA, result.videoB, true)
+    onSessionCreated?.(result.session_id)
+  }
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -44,15 +54,23 @@ const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ onSessionCreated }) => {
       setError(null)
 
       const result = await apiClient.analyzeVideos(data.youtubeUrl, data.instagramUrl)
-
-      setSession(result.session_id, result.videoA, result.videoB)
+      setSession(result.session_id, result.videoA, result.videoB, false)
       onSessionCreated?.(result.session_id)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to analyze videos"
-      setError(errorMessage)
+      // This is a prototype and no backend is connected yet, so fall back to
+      // a sample demo session built from the URLs the user entered, rather
+      // than leaving them with a dead end.
+      loadDemo(data.youtubeUrl, data.instagramUrl)
     } finally {
       setIsAnalyzing(false)
     }
+  }
+
+  const handleTryDemo = () => {
+    const { youtubeUrl, instagramUrl } = demoUrls()
+    setValue("youtubeUrl", youtubeUrl)
+    setValue("instagramUrl", instagramUrl)
+    loadDemo(youtubeUrl, instagramUrl)
   }
 
   return (
@@ -73,25 +91,35 @@ const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ onSessionCreated }) => {
                 backendStatus === "online"
                   ? "bg-emerald-400"
                   : backendStatus === "offline"
-                  ? "bg-red-400"
+                  ? "bg-purple-400"
                   : "bg-amber-400 animate-pulse"
               }`}
             />
             <span className="text-slate-300">
               {backendStatus === "checking" && "Checking backend connection…"}
               {backendStatus === "online" && "Backend connected"}
-              {backendStatus === "offline" && "Backend unavailable"}
+              {backendStatus === "offline" && "Prototype · demo mode available"}
             </span>
           </div>
         </div>
 
         {backendStatus === "offline" && (
-          <div className="mb-6 rounded-xl border border-amber-800 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">
-            <p className="font-semibold mb-1">⚠️ The backend API isn't reachable right now.</p>
-            <p className="text-amber-200/80">
-              {backendDetail ||
-                "The analysis service may not be deployed yet, or the API URL isn't configured. You can still explore the interface, but analyzing videos won't work until the backend is connected."}
+          <div className="mb-6 rounded-xl border border-indigo-800 bg-indigo-950/40 px-4 py-4 text-sm text-indigo-100">
+            <p className="font-semibold mb-1 flex items-center gap-1.5">
+              <span aria-hidden>🧪</span> This is a prototype
             </p>
+            <p className="text-indigo-200/80 mb-3">
+              The AI backend isn't connected yet, so analyzing a video below will show sample
+              results instead of live data. You can explore the full experience right now with
+              demo data.
+            </p>
+            <Button
+              type="button"
+              onClick={handleTryDemo}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-semibold h-9 px-4"
+            >
+              ▶ Try Demo Mode
+            </Button>
           </div>
         )}
 
